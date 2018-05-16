@@ -13,17 +13,18 @@ class Error(Exception):
     '''
     pass
 
-class CellOverwriteError(Error,pos,val):
+class CellOverwriteError(Error):
     '''
     Exception to be raised when a user attempts to overwrite a non-blank cell.
     Attribues:
         pos -- the position the user tried to set
         val -- the value the user tried to set
     '''
-    self.pos = pos
-    self.val = val
+    def __init__(pos,val):
+        self.pos = pos
+        self.val = val
 
-class InvalidCellValueError(Error,pos,val):
+class InvalidCellValueError(Error):
     '''
     Exception to be raised for setting a cell with an invalid value
     (i.e. < 0 or > 9)
@@ -31,49 +32,19 @@ class InvalidCellValueError(Error,pos,val):
         pos -- the position the user tried to set
         val -- the value the user tried to set
     '''
-    self.pos = pos
-    self.val = val
+    def __init__(pos,val):
+        self.pos = pos
+        self.val = val
 
-class InvalidCellPosError(Error,pos):
+class InvalidCellPosError(Error):
     '''
     Exception to be raised for trying to set a cell with an invalid position
     (i.e. < 0 or > 9)
     Attribues:
         pos -- the position the user tried to set
     '''
-    self.pos = pos
-    self.val = val
-
-def validate(puzzle):
-    '''
-    A helper method which validates a candidate Sudoku puzzleself.
-    parameters:
-        puzzle : the candidate puzzle being validated (a 9*9 ndarray)
-    returns:
-        boolean : true if the puzzle is Sudoku valid, false otherwise
-    '''
-    for i in range(1,10):
-        '''
-        Validate the rows and columns
-        '''
-        if not np.array_equal(
-            np.sort(puzzle[i,:].flatten),
-            np.arange(1,10)
-            ) : return False
-        if not np.array_equal(
-            np.sort(puzzle[:,i].flatten),
-            np.arange(1,10)
-            ) : return False
-    for i in range(3):
-        '''
-        Validate the subgrids.
-        '''
-        for j in range(3):
-            if not np.array_equal(
-                  np.sort(puzzle[3*i : 3*(i+1),3*j : 3*(j+1)].flatten),
-                  np.arange(1,10)
-                  ) : return False
-    return True
+    def __init__(pos):
+        self.pos = pos
 
 def makePuzzle():
     '''
@@ -81,15 +52,64 @@ def makePuzzle():
     returns:
         candidate : A correct and valid sudoku puzzle (a 9*9 ndarray)
     '''
-    valid_puzzle = false
-    while not valid_puzzle:
-        candidate = np.random.shuffle([np.arange(1,10)]*9)
-        valid_puzzle = validate(puzzle)
+    rows = [{1,2,3,4,5,6,7,8,9}]*9
+    cols = [{1,2,3,4,5,6,7,8,9}]*9
+    subgrids = np.array([{1,2,3,4,5,6,7,8,9}]*9).reshape(3,3)
+
+    puzzle = np.zeros((9,9))
+
+    while 0 in puzzle:
+        for i in range(3):
+            for j in range(3):
+                '''
+                (i,j) tells us which sub-grid we're dealing with
+                '''
+                if 0 in puzlle[3*i:3*(i+1),3*j:3*(j+1)]:
+                    k = np.random.randint(3)
+                    l = np.random.randint(3)
+                    while not puzlle[3*i + k,3*j+l] == 0 :
+                        k = np.random.randint(3)
+                        l = np.random.randint(3)
+                    '''
+                    (k,l) tells us which cell in the subgrid we're dealing with
+                    '''
+                    row = 3*i+k
+                    col = 3*j+l
+                    '''
+                    row and col are the row and col value for the entire puzzle
+                    '''
+                    row_avail  = rows[row]
+                    col_avail  = cols[col]
+                    subg_avail = subgrids[i,j]
+                    '''
+                    We need to find all of the values that are legal to go into
+                    the row, col and subgrid that we're dealing with. We also
+                    want to perform a sanity check to make sure that there is at
+                    least one such value we can insert.
+                    '''
+                    common_avail = row_avail & col_avail & subg_avail
+                    assert(not common_avail <= {} )
+                    '''
+                    Let's insert a random value from the common available values
+                    to make a hopefully "unique" puzzle.
+                    '''
+                    cell_val = np.random.choice(list(common_avail))
+                    '''
+                    Remove the random value from the available lists for the
+                    row, col and subrid we're looking at. Then set the puzzle
+                    value appropriately.
+                    '''
+                    rows[row]     -= {cell_val}
+                    cols[col]     -= {cell_val}
+                    subgrids[i,j] -= {cell_val}
+                    puzzle[row,col] = cell_val
     return candidate
 
-def getView(puzzle,missing):
+def setView(puzzle,missing):
     '''
-    The method to get the view of the puzzle which is displayed to the player.
+    The method to set the original view of the puzzle which is displayed to the
+    user. The original view must be maintained to be sure the user doesn't try
+    to reset an exposed cell.
     parameters:
         puzzle : a correct and valid sudoku puzzle
         missing : the number of missing values in the view of the puzzle
@@ -99,9 +119,9 @@ def getView(puzzle,missing):
     '''
     return np.random.shuffle(
         np.concatenate(
-            [Trueview              = ]*(9*9 - missing),
-            [False]*(missing))view
-    ).reshape(9,9)view
+            [True]*(9*9 - missing),
+            [False]*(missing)
+    ).reshape(9,9)
 
 class SudokuClient:
     '''
@@ -118,14 +138,14 @@ class SudokuClient:
         getView : get the value in the view at a particular cell
         setView : set the value in the view at a particular cell
     '''
-    def __init__(self,missing):
+    def __init__(self,missing=9):
         '''
         The class init methodselfself.
         parameters:
             missing : the number of missing values in the puzzle (user defined)
         '''
         self.solution     = makePuzzle()
-        self.orig_view  = getView(self.solution,missing)
+        self.orig_view    = setView(self.solution,missing)
         self.update_view  = np.where(
             self.orig_view,
             self.solution,
@@ -158,6 +178,12 @@ class SudokuClient:
             raise InvalidCellPosError(pos)
         return self.update_view[i,j]
 
+    def getPuzzle():
+        '''
+        The moethod to get the underlying puzzle solution.
+        returns:
+            puzzle : the underlying puzzle solution.
+        '''
     def setView(pos,val):
         '''
         The method to set the value in the view of the puzzle.
@@ -177,7 +203,7 @@ class SudokuClient:
             raise CellOverwriteError(pos,val)
         if val < 1 or val > 9 :
             raise InvalidCellValueError(pos,val)
-        self.update_view[i,j] =  val
+        self.update_view[pos[0],pos[1]]=val
 
     def print_view():
         '''
@@ -191,4 +217,3 @@ class SudokuClient:
         print(self.solution)
         '''
         print(self.solution)
-    
