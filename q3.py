@@ -121,9 +121,9 @@ def setView(puzzle,missing):
         np.concatenate(
             [True]*(9*9 - missing),
             [False]*(missing)
-    ).reshape(9,9)
+    )).reshape(9,9)
 
-class SudokuClient:
+class SudokuClient():
     '''
     The SudokuClient class includes attributes and methods to allow a user to
     enjoy a nice Sudoku puzzle challenge.
