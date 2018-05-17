@@ -49,131 +49,80 @@ class InvalidCellPosError(Error):
     def __init__(pos):
         self.pos = pos
 
+def k_to_pos(k):
+    '''
+    The helper method to provide the mapping from k'th cell to grid pos.
+    '''
+    return (int(k/9),k-(int(k/9)*9))
+
+def get_legal_values(k,puzzle):
+    '''
+    The helper method that determines the "legal" values for this cell.
+    parameters :
+        k     : the sequential indicator of the cell we're finding legal values
+                for
+        board : the status of the puzzle board at this time
+    '''
+    (i,j) = k_to_pos(k)
+    (k,l) = (int(i/3),int(j/3))
+    '''
+    (k,l) tells us what subgrid we're dealing with
+    '''
+    row_avail  = set(np.arange(1,9)) - set(board[i,:])
+    col_avail  = set(np.arange(1,9)) - set(board[:,j])
+    subg_avail = set(np.arange(1,9)) - set(board[3*k:3:(k+1),3*l:3*(l+1)])
+
+    return np.random.shuffle(np.array(list(row_avail & col_avail & subg_avail)))
+
+def is_empty(legal_values) : return legal_values.size == 0
+
 def makePuzzle():
     '''
     The helper method which returns a correct and valid sudoku puzzle.
     returns:
         candidate : A correct and valid sudoku puzzle (a 9*9 ndarray)
     '''
-    rows = [{1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9}]
-    
-    cols = [{1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9},
-            {1,2,3,4,5,6,7,8,9}]
-    
-    subgrids = np.array([{1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9},
-                         {1,2,3,4,5,6,7,8,9}]).reshape(3,3)
 
-    if DEBUG : print("rows: {}".format(rows))
-    if DEBUG : print("cols: {}".format(rows))
-    if DEBUG : print("subgrids: {}".format(rows))
-            
-    puzzle = np.zeros((9,9))
+    ,puzzle = fill_puzzle(0,np.zeros((9,9))
+    return puzzle
 
+def add_cell_value(k,cell_value,puzzle):
+    (i,j) = k_to_pos(k)
+    puzzle[i,j] = cell_value
+    return puzzle
+
+def fill_puzzle(k,puzzle):
     '''
-    fill_board(k,board):
-         if full board : return (true,board)
-         else legal_values = get_legal_values(k,board)
-         if legal_values is empty : return (false,board) 
-         value = legal_values[-1]
-         legal_values = legal_values[:-1]
-         new_board = add_cell(k,value,board)
-         while not fill_board(k+1,new_board)[0]:
-               if legal_values is empty return false
-               value = legal_values[-1]
-               new_board = add_cell(k,value,board)
-    
-    NEEDED: 
-        mapping from k to (i,j)
-        method for get_legal_values(k,board)
-        method for legal_values is empty:
-               idea : def is_empty(legal_values) : return len(legal_values) == 0 
+    The helper method to return a full, valid puzzle.
+    This method recursively fills the puzzle, and is called sequentially once
+    for each of the 9*9 cells of the 9 by 9 puzzle board, filling each cell in
+    order (left to right, top to bottom) from the top left corner (k = 0) to
+    the bottom right corner (9*9 -1).
+    parameters:
+        k      : the sequential cell value to fill
+        puzzle : the state of the puzzle board after trying to fill the k-1 cell
     '''
+    #Test if we've filled up the puzzle yet
+    if k == 9*9 : return (True,puzzle)
 
-    while 0 in puzzle:
-        for i in range(3):
-            if DEBUG : print("i: {}".format(i))
-            for j in range(3):
-                if DEBUG : print("j: {}".format(j))
-                '''
-                (i,j) tells us which sub-grid we're dealing with
-                '''
-                if 0 in puzzle[3*i:3*(i+1),3*j:3*(j+1)]:
-                    k = np.random.randint(3)
-                    l = np.random.randint(3)
-                    while not puzzle[3*i + k,3*j+l] == 0 :
-                        k = np.random.randint(3)
-                        l = np.random.randint(3)
-                    '''
-                    (k,l) tells us which cell in the subgrid we're dealing with
-                    '''
-                    row = 3*i+k
-                    col = 3*j+l
-                    if DEBUG :
-                        print("row: {}".format(row))
-                        print("col: {}".format(col))                        
-                    '''
-                    row and col are the row and col value for the entire puzzle
-                    '''
-                    row_avail  = rows[row]
-                    col_avail  = cols[col]
-                    subg_avail = subgrids[i,j]
-                    '''
-                    We need to find all of the values that are legal to go into
-                    the row, col and subgrid that we're dealing with. We also
-                    want to perform a sanity check to make sure that there is at
-                    least one such value we can insert.
-                    '''
-                    common_avail = row_avail & col_avail & subg_avail
-                    if DEBUG :
-                        print("row_avail: {}".format(row_avail))
-                        print("col_avail: {}".format(col_avail))
-                        print("subg_avail: {}".format(subg_avail))
-                        print("common_avail: {}".format(common_avail))
-                        
-                    assert(not common_avail <= set() )
-                    '''
-                    Let's insert a random value from the common available values
-                    to make a hopefully "unique" puzzle.
-                    '''
-                    cell_val = np.random.choice(list(common_avail))
-                    '''
-                    Remove the random value from the available lists for the
-                    row, col and subrid we're looking at. Then set the puzzle
-                    value appropriately.
-                    '''
-                    rows[row]     -= {cell_val}
-                    cols[col]     -= {cell_val}
-                    subgrids[i,j] -= {cell_val}
-                    puzzle[row,col] = cell_val
-                    if DEBUG :
-                        print("puzzle: \n{}".format(puzzle))
-                        print("rows: {}".format(rows))
-                        print("cols: {}".format(cols))
-                        print("subgrids: {}".format(subgrids))
-                
-    return candidate
+    legal_values = get_legal_values(k,puzzle)
+
+    #Test if we reached a dead end
+    if is_empty(legal_values) : return (False,puzzle)
+
+    cell_value =  legal_values[-1]
+    legal_values = legal_values[:-1]
+    candidate_puzzle = add_cell_value(k,cell_value,puzzle)
+    (finished,finished_puzzle) = fill_puzzle(k+1,candidate_puzzle)
+
+    while not finished:
+        if is_empty(legal_values) : return (False,puzzle)
+        cell_value = legal_values[-1]
+        legal_values = legal_values[:-1]
+        candidate_puzzle = add_cell_value(k,cell_value,puzzle)
+        (finished,finished_puzzle) = fill_puzzle(k+1,candidate_puzzle)
+
+    return (finished,finished_puzzle)
 
 def setView(puzzle,missing):
     '''
