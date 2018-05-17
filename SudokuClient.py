@@ -91,6 +91,26 @@ def makePuzzle():
             
     puzzle = np.zeros((9,9))
 
+    '''
+    fill_board(k,board):
+         if full board : return (true,board)
+         else legal_values = get_legal_values(k,board)
+         if legal_values is empty : return (false,board) 
+         value = legal_values[-1]
+         legal_values = legal_values[:-1]
+         new_board = add_cell(k,value,board)
+         while not fill_board(k+1,new_board)[0]:
+               if legal_values is empty return false
+               value = legal_values[-1]
+               new_board = add_cell(k,value,board)
+    
+    NEEDED: 
+        mapping from k to (i,j)
+        method for get_legal_values(k,board)
+        method for legal_values is empty:
+               idea : def is_empty(legal_values) : return len(legal_values) == 0 
+    '''
+
     while 0 in puzzle:
         for i in range(3):
             if DEBUG : print("i: {}".format(i))
