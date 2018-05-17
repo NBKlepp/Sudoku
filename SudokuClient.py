@@ -7,6 +7,9 @@
 '''
 import numpy as np
 
+#A debug flag
+DEBUG = True
+
 class Error(Exception):
     '''
     The base error class.
@@ -52,22 +55,54 @@ def makePuzzle():
     returns:
         candidate : A correct and valid sudoku puzzle (a 9*9 ndarray)
     '''
-    rows = [{1,2,3,4,5,6,7,8,9}]*9
-    cols = [{1,2,3,4,5,6,7,8,9}]*9
-    subgrids = np.array([{1,2,3,4,5,6,7,8,9}]*9).reshape(3,3)
+    rows = [{1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9}]
+    
+    cols = [{1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9},
+            {1,2,3,4,5,6,7,8,9}]
+    
+    subgrids = np.array([{1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9},
+                         {1,2,3,4,5,6,7,8,9}]).reshape(3,3)
 
+    if DEBUG : print("rows: {}".format(rows))
+    if DEBUG : print("cols: {}".format(rows))
+    if DEBUG : print("subgrids: {}".format(rows))
+            
     puzzle = np.zeros((9,9))
 
     while 0 in puzzle:
         for i in range(3):
+            if DEBUG : print("i: {}".format(i))
             for j in range(3):
+                if DEBUG : print("j: {}".format(j))
                 '''
                 (i,j) tells us which sub-grid we're dealing with
                 '''
-                if 0 in puzlle[3*i:3*(i+1),3*j:3*(j+1)]:
+                if 0 in puzzle[3*i:3*(i+1),3*j:3*(j+1)]:
                     k = np.random.randint(3)
                     l = np.random.randint(3)
-                    while not puzlle[3*i + k,3*j+l] == 0 :
+                    while not puzzle[3*i + k,3*j+l] == 0 :
                         k = np.random.randint(3)
                         l = np.random.randint(3)
                     '''
@@ -75,6 +110,9 @@ def makePuzzle():
                     '''
                     row = 3*i+k
                     col = 3*j+l
+                    if DEBUG :
+                        print("row: {}".format(row))
+                        print("col: {}".format(col))                        
                     '''
                     row and col are the row and col value for the entire puzzle
                     '''
@@ -88,7 +126,13 @@ def makePuzzle():
                     least one such value we can insert.
                     '''
                     common_avail = row_avail & col_avail & subg_avail
-                    assert(not common_avail <= {} )
+                    if DEBUG :
+                        print("row_avail: {}".format(row_avail))
+                        print("col_avail: {}".format(col_avail))
+                        print("subg_avail: {}".format(subg_avail))
+                        print("common_avail: {}".format(common_avail))
+                        
+                    assert(not common_avail <= set() )
                     '''
                     Let's insert a random value from the common available values
                     to make a hopefully "unique" puzzle.
@@ -103,6 +147,12 @@ def makePuzzle():
                     cols[col]     -= {cell_val}
                     subgrids[i,j] -= {cell_val}
                     puzzle[row,col] = cell_val
+                    if DEBUG :
+                        print("puzzle: \n{}".format(puzzle))
+                        print("rows: {}".format(rows))
+                        print("cols: {}".format(cols))
+                        print("subgrids: {}".format(subgrids))
+                
     return candidate
 
 def setView(puzzle,missing):
